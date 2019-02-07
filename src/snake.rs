@@ -4,7 +4,7 @@ use piston_window::types::Color;
 
 use draw::draw_block;
 
-const SNAKE_COLOR: Color = [0.00, 0.80, 0.00, 1.0];
+
 #[derive(Copy, Clone, PartialEq)]
 pub enum Direction {
     Up,
@@ -33,10 +33,11 @@ pub struct Snake {
     direction: Direction,
     body: LinkedList<Block>,
     tail: Option<Block>,
+    color: Color
 }
 
 impl Snake {
-    pub fn new(x: i32, y: i32) -> Snake {
+    pub fn new(x: i32, y: i32, color: Color) -> Snake {
         let mut body: LinkedList<Block> = LinkedList::new();
         body.push_back(Block {
             x: x + 2,
@@ -55,12 +56,13 @@ impl Snake {
             direction: Direction::Right,
             body,
             tail: None,
+            color: color
         }
     }
 
     pub fn draw(&self, con: &Context, g: &mut G2d) {
         for block in &self.body {
-            draw_block(SNAKE_COLOR, block.x, block.y, con, g);
+            draw_block(self.color, block.x, block.y, con, g);
         }
     }
 

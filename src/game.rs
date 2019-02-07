@@ -7,13 +7,16 @@ use snake::{Direction, Snake};
 use draw::{draw_block, draw_rectangle};
 
 const FOOD_COLOR: Color = [0.80, 0.00, 0.00, 1.0];
+const PLAYER_1_COLOR: Color = [0.00, 0.80, 0.00, 1.0];
+const PLAYER_2_COLOR: Color = [0.00, 0.50, 0.80, 1.0];
 const GAMEOVER_COLOR: Color = [0.90, 0.00, 0.00, 0.5];
 
 const MOVING_PERIOD: f64 = 0.1;
 const RESTART_TIME: f64 = 1.0;
 
 pub struct Game {
-    snake: Snake,
+    player_1: Snake,
+    player_2: Snake,
 
     food_exists: bool,
     food_x: i32,
@@ -30,7 +33,8 @@ pub struct Game {
 impl Game {
     pub fn new(width: i32, height: i32) -> Game {
         Game {
-            snake: Snake::new(1, 1),
+            player_1: Snake::new(1, 1, PLAYER_1_COLOR),
+            player_2: Snake::new(3, 3, PLAYER_2_COLOR),
             waiting_time: 0.0,
             food_exists: true,
             food_x: 6,
@@ -38,7 +42,7 @@ impl Game {
             width,
             height,
             game_over: false,
-	    score: 0
+	        score: 0
         }
     }
 
@@ -47,25 +51,39 @@ impl Game {
             return;
         }
 
-        let dir = match key {
+        let dir1 = match key {
             Key::Up => Some(Direction::Up),
             Key::Down => Some(Direction::Down),
             Key::Left => Some(Direction::Left),
             Key::Right => Some(Direction::Right),
-            _ => Some(self.snake.head_direction())
+            _ => Some(self.player_1.head_direction())
+        };
+
+        let dir2 = match key {
+            Key::W => Some(Direction::Up),
+            Key::S => Some(Direction::Down),
+            Key::A => Some(Direction::Left),
+            Key::D => Some(Direction::Right),
+             _ => Some(self.player_2.head_direction())
         };
         
         // If the direction pressed is the opposite direction 
         // of snake moment don't do anything
-        if dir.unwrap() == self.snake.head_direction().opposite() {
-            return;
+        if dir2.unwrap() != self.player_2.head_direction().opposite(){
+            &self.update_snake_2(dir2);
+        }
+        if dir1.unwrap() != self.player_1.head_direction().opposite() {
+            &self.update_snake_1(dir1);
         }
 
-        self.update_snake(dir);
+        return
+            
+        
     }
 
     pub fn draw(&self, con: &Context, g: &mut G2d) {
-        self.snake.draw(con, g);
+        self.player_1.draw(con, g);
+        self.player_2.draw(con, g);
 
         if self.food_exists {
             draw_block(FOOD_COLOR, self.food_x, self.food_y, con, g);
@@ -91,43 +109,80 @@ impl Game {
         }
 
         if self.waiting_time > MOVING_PERIOD {
-            self.update_snake(None);
+            self.update_snake_1(None);
+            self.update_snake_2(None);
         }
     }
 
-    fn check_overflow(&mut self) -> bool {
-        let (head_x, head_y): (i32, i32) = self.snake.head_position();
+    fn check_overflow_snake_1(&mut self) -> bool {
+       let (head_x, head_y): (i32, i32) = self.player_1.head_position();
 
-	if head_x < 0 {
-	   self.snake.overflow_switch(self.width, head_y);
-	}
-	else if head_y < 0 {
-	   self.snake.overflow_switch(head_x, self.height);
-	}
-	else if head_x > self.width {
-	   self.snake.overflow_switch(0, head_y);
-	}
-	else if head_y > self.height {
-	   self.snake.overflow_switch(head_x, 0);
-	}
-	return true;
+        if head_x < 0 {
+           self.player_1.overflow_switch(self.width, head_y);
+        }
+        else if head_y < 0 {
+           self.player_1.overflow_switch(head_x, self.height);
+        }
+        else if head_x > self.width {
+           self.player_1.overflow_switch(0, head_y);
+        }
+        else if head_y > self.height {
+           self.player_1.overflow_switch(head_x, 0);
+        }
+        return true;
     }
 
-    fn check_eating(&mut self) {
-        let (head_x, head_y): (i32, i32) = self.snake.head_position();
+    fn check_overflow_snake_2(&mut self) -> bool {
+        let (head_x, head_y): (i32, i32) = self.player_2.head_position();
+
+        if head_x < 0 {
+           self.player_2.overflow_switch(self.width, head_y);
+        }
+        else if head_y < 0 {
+           self.player_2.overflow_switch(head_x, self.height);
+        }
+        else if head_x > self.width {
+           self.player_2.overflow_switch(0, head_y);
+        }
+        else if head_y > self.height {
+           self.player_2.overflow_switch(head_x, 0);
+        }
+        return true;
+    }
+        
+
+    fn check_eating_1(&mut self) {
+        let (head_x, head_y): (i32, i32) = self.player_1.head_position();
         if self.food_exists && self.food_x == head_x && self.food_y == head_y {
             self.score = self.score + 1;
-	    self.food_exists = false;
-            self.snake.restore_tail();
+            self.food_exists = false;
+            self.player_1.restore_tail();
         }
     }
 
-    fn check_if_snake_alive(&self, dir: Option<Direction>) -> bool {
-        let (next_x, next_y) = self.snake.next_head(dir);
-        if self.snake.overlap_tail(next_x, next_y) {
+    fn check_eating_2(&mut self){
+        let (head_x, head_y): (i32, i32) = self.player_2.head_position();
+        if self.food_exists && self.food_x == head_x && self.food_y == head_y {
+            self.score = self.score + 1;
+            self.food_exists = false;
+            self.player_2.restore_tail();
+        }
+    }
+
+    fn check_if_snake_alive_1(&self, dir: Option<Direction>) -> bool {
+        let (next_x, next_y) = self.player_1.next_head(dir);
+        if self.player_1.overlap_tail(next_x, next_y) {
             return false;
         }
-	return true;
+	    return true;
+    }
+
+    fn check_if_snake_alive_2(&self, dir: Option<Direction>) -> bool {
+        let (next_x, next_y) = self.player_2.next_head(dir);
+        if self.player_2.overlap_tail(next_x, next_y) {
+            return false;
+        }
+        return true;
     }
 
     fn add_food(&mut self) {
@@ -135,7 +190,7 @@ impl Game {
 
         let mut new_x = rng.gen_range(1, self.width - 1);
         let mut new_y = rng.gen_range(1, self.height - 1);
-        while self.snake.overlap_tail(new_x, new_y) {
+        while self.player_1.overlap_tail(new_x, new_y) {
             new_x = rng.gen_range(1, self.width - 1);
             new_y = rng.gen_range(1, self.height - 1);
         }
@@ -145,11 +200,23 @@ impl Game {
         self.food_exists = true;
     }
 
-    fn update_snake(&mut self, dir: Option<Direction>) {
-        if self.check_if_snake_alive(dir) {
-	    	self.check_overflow();
-		self.snake.move_forward(dir);
-            	self.check_eating();
+    fn update_snake_1(&mut self, dir: Option<Direction>) {
+            if self.check_if_snake_alive_1(dir) {
+                self.check_overflow_snake_1();
+                self.player_1.move_forward(dir);
+                self.check_eating_1();
+            } else {
+                self.game_over = true;
+            }
+            self.waiting_time = 0.0;
+           
+    }
+
+    fn update_snake_2(&mut self, dir: Option<Direction>){
+        if self.check_if_snake_alive_2(dir) {
+            self.check_overflow_snake_2();
+            self.player_2.move_forward(dir);
+            self.check_eating_2();
         } else {
             self.game_over = true;
         }
@@ -157,7 +224,8 @@ impl Game {
     }
 
     fn restart(&mut self) {
-        self.snake = Snake::new(2, 2);
+        self.player_1 = Snake::new(2, 2, PLAYER_1_COLOR);
+        self.player_2 = Snake::new(3, 3, PLAYER_2_COLOR);
         self.waiting_time = 0.0;
         self.food_exists = true;
         self.food_x = 6;
