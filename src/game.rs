@@ -82,37 +82,31 @@ impl Game {
         player
     }
 
+    fn update_snake(&mut self, player_dir: PlayerDirection) {
+        match player_dir.player {
+            Players::PlayerOne => {
+                if player_dir.direction != self.player_1.head_direction().opposite() {
+                    self.update_snake_1(Some(player_dir.direction))
+                }
+            }
+            Players::PlayerTwo => {
+                if player_dir.direction != self.player_2.head_direction().opposite() {
+                    self.update_snake_2(Some(player_dir.direction))
+                }
+            }
+        }
+    }
+
     pub fn key_pressed(&mut self, key: piston_window::Key) {
         if self.game_over {
             return;
         }
 
         let player_direction = self.get_player_direction(key);
-        println!("{:?}", player_direction);
 
-        let dir1 = match key {
-            Key::Up => Some(Direction::Up),
-            Key::Down => Some(Direction::Down),
-            Key::Left => Some(Direction::Left),
-            Key::Right => Some(Direction::Right),
-            _ => Some(self.player_1.head_direction()),
-        };
-
-        let dir2 = match key {
-            Key::W => Some(Direction::Up),
-            Key::S => Some(Direction::Down),
-            Key::A => Some(Direction::Left),
-            Key::D => Some(Direction::Right),
-            _ => Some(self.player_2.head_direction()),
-        };
-
-        // If the direction pressed is the opposite direction
-        // of snake moment don't do anything
-        if dir2.unwrap() != self.player_2.head_direction().opposite() {
-            &self.update_snake_2(dir2);
-        }
-        if dir1.unwrap() != self.player_1.head_direction().opposite() {
-            &self.update_snake_1(dir1);
+        match player_direction {
+            Some(dir) => self.update_snake(dir),
+            None => println!("None"),
         }
 
         return;
