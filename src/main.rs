@@ -2,25 +2,24 @@ extern crate piston_window;
 extern crate rand;
 
 mod draw;
-mod snake;
 mod game;
+mod snake;
 
-use piston_window::*;
 use piston_window::types::Color;
+use piston_window::*;
+use snake::Direction;
 
-use game::Game;
 use draw::to_coord_u32;
+use game::Game;
 
 const BACK_COLOR: Color = [0.00, 0.00, 0.00, 1.0];
-
-
 
 fn main() {
     let (width, height) = (20, 20);
 
     let mut window: PistonWindow =
         WindowSettings::new("Snake", [to_coord_u32(width), to_coord_u32(height)])
-	    .exit_on_esc(true)
+            .exit_on_esc(true)
             .build()
             .unwrap();
 

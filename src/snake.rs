@@ -5,7 +5,7 @@ use piston_window::types::Color;
 use draw::draw_block;
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Direction {
     Up,
     Down,
