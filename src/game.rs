@@ -86,12 +86,26 @@ impl Game {
         match player_dir.player {
             Players::PlayerOne => {
                 if player_dir.direction != self.player_1.head_direction().opposite() {
-                    self.update_snake_1(Some(player_dir.direction))
+                    if self.check_if_snake_alive_1(Some(player_dir.direction)) {
+                        self.check_overflow_snake_1();
+                        self.player_1.move_forward(Some(player_dir.direction));
+                        self.check_eating_1();
+                    } else {
+                        self.game_over = true;
+                    }
+                    self.waiting_time = 0.0;
                 }
             }
             Players::PlayerTwo => {
                 if player_dir.direction != self.player_2.head_direction().opposite() {
-                    self.update_snake_2(Some(player_dir.direction))
+                    if self.check_if_snake_alive_2(Some(player_dir.direction)) {
+                        self.check_overflow_snake_2();
+                        self.player_2.move_forward(Some(player_dir.direction));
+                        self.check_eating_2();
+                    } else {
+                        self.game_over = true;
+                    }
+                    self.waiting_time = 0.0;
                 }
             }
         }
@@ -140,8 +154,14 @@ impl Game {
         }
 
         if self.waiting_time > MOVING_PERIOD {
-            self.update_snake_1(None);
-            self.update_snake_2(None);
+            self.update_snake(PlayerDirection::new(
+                Players::PlayerOne,
+                self.player_1.head_direction(),
+            ));
+            self.update_snake(PlayerDirection::new(
+                Players::PlayerTwo,
+                self.player_2.head_direction(),
+            ));
         }
     }
 
@@ -222,28 +242,6 @@ impl Game {
         self.food_x = new_x;
         self.food_y = new_y;
         self.food_exists = true;
-    }
-
-    fn update_snake_1(&mut self, dir: Option<Direction>) {
-        if self.check_if_snake_alive_1(dir) {
-            self.check_overflow_snake_1();
-            self.player_1.move_forward(dir);
-            self.check_eating_1();
-        } else {
-            self.game_over = true;
-        }
-        self.waiting_time = 0.0;
-    }
-
-    fn update_snake_2(&mut self, dir: Option<Direction>) {
-        if self.check_if_snake_alive_2(dir) {
-            self.check_overflow_snake_2();
-            self.player_2.move_forward(dir);
-            self.check_eating_2();
-        } else {
-            self.game_over = true;
-        }
-        self.waiting_time = 0.0;
     }
 
     fn restart(&mut self) {
