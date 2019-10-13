@@ -85,9 +85,9 @@ impl Game {
     fn update_snake(&mut self, player_dir: PlayerDirection) {
         match player_dir.player {
             Players::PlayerOne => {
-                if player_dir.direction != self.player_1.head_direction().opposite() {
-                    if self.check_if_snake_alive_1(Some(player_dir.direction)) {
-                        self.check_overflow_snake_1();
+                if self.check_opposite_dir(player_dir.direction, &self.player_1) {
+                    if self.check_if_snake_alive(Some(player_dir.direction), &self.player_1) {
+                        self.check_overflow_snake(player_dir.player);
                         self.player_1.move_forward(Some(player_dir.direction));
                         self.check_eating_1();
                     } else {
@@ -97,8 +97,8 @@ impl Game {
                 }
             }
             Players::PlayerTwo => {
-                if player_dir.direction != self.player_2.head_direction().opposite() {
-                    if self.check_if_snake_alive_2(Some(player_dir.direction)) {
+                if self.check_opposite_dir(player_dir.direction, &self.player_2) {
+                    if self.check_if_snake_alive(Some(player_dir.direction), &self.player_2) {
                         self.check_overflow_snake_2();
                         self.player_2.move_forward(Some(player_dir.direction));
                         self.check_eating_2();
@@ -165,6 +165,29 @@ impl Game {
         }
     }
 
+    fn check_opposite_dir(&self, direction: Direction, snake: &Snake) -> bool {
+        direction != snake.head_direction().opposite()
+    }
+
+    fn check_overflow_snake(&mut self, snake: Players) {
+        let player: &mut Snake = match snake {
+            Players::PlayerOne => &mut self.player_1,
+            Players::PlayerTwo => &mut self.player_2,
+        };
+
+        let (head_x, head_y): (i32, i32) = player.head_position();
+
+        if head_x < 1 {
+            player.overflow_switch(self.width, head_y);
+        } else if head_y < 1 {
+            player.overflow_switch(head_x, self.height);
+        } else if head_x > self.width {
+            player.overflow_switch(1, head_y);
+        } else if head_y > self.height {
+            player.overflow_switch(head_x, 1);
+        }
+    }
+
     fn check_overflow_snake_1(&mut self) -> bool {
         let (head_x, head_y): (i32, i32) = self.player_1.head_position();
 
@@ -213,17 +236,9 @@ impl Game {
         }
     }
 
-    fn check_if_snake_alive_1(&self, dir: Option<Direction>) -> bool {
-        let (next_x, next_y) = self.player_1.next_head(dir);
-        if self.player_1.overlap_tail(next_x, next_y) {
-            return false;
-        }
-        return true;
-    }
-
-    fn check_if_snake_alive_2(&self, dir: Option<Direction>) -> bool {
-        let (next_x, next_y) = self.player_2.next_head(dir);
-        if self.player_2.overlap_tail(next_x, next_y) {
+    fn check_if_snake_alive(&self, dir: Option<Direction>, player: &Snake) -> bool {
+        let (next_x, next_y) = player.next_head(dir);
+        if player.overlap_tail(next_x, next_y) {
             return false;
         }
         return true;
